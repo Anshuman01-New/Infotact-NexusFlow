@@ -92,3 +92,24 @@ Telemetry storage and rule processing are separate responsibilities:
 - **RxJS Rule Engine** processes incoming data streams and evaluates user-defined workflows and conditions.
 
 This separation allows NexusFlow to handle large-scale telemetry storage while simultaneously performing real-time rule execution.
+
+# 3. End-to-End Application Workflow
+
+1. **User logs in:** The factory manager opens the React application and accesses the dashboard.
+
+2. **Creates a visual workflow:** The manager opens the graph builder and drags nodes onto the canvas.
+
+3. **Connects the nodes:** For example:  
+   `Sensor → Moving Average → Condition → SMS Alert`
+
+4. **Saves the workflow:** React Flow's graph data is serialized into JSON and sent to the backend.
+
+5. **Backend compiles the workflow:** Node.js reads the JSON, interprets the nodes and connections, validates the graph, and creates an executable RxJS pipeline.
+
+6. **Sensor data arrives:** Mock IoT devices send readings to an Express ingestion endpoint.
+
+7. **Data is stored and processed:** MongoDB stores telemetry while the RxJS pipeline evaluates incoming readings.
+
+8. **Alert is generated:** When a rule condition is satisfied, the backend triggers a mock SMS or webhook.
+
+9. **Dashboard updates:** WebSockets deliver live readings and alerts to the React frontend.
