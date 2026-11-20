@@ -1,5 +1,6 @@
 const Telemetry = require('../models/Telemetry');
 const Device = require('../models/Device');
+const ruleEngine = require('../services/ruleEngine');
 
 /**
  * Normalizes incoming payload into the schema expected by MongoDB Time-Series
@@ -47,6 +48,9 @@ exports.ingestTelemetry = async (req, res) => {
 
     const telemetry = new Telemetry(telemetryData);
     const saved = await telemetry.save();
+
+    // Pass incoming reading to active RxJS rule engine
+    ruleEngine.processReading(telemetryData);
 
     // Async update Device registry with last reading
     Device.findOneAndUpdate(
@@ -98,6 +102,9 @@ exports.batchIngestTelemetry = async (req, res) => {
 
     const docs = items.map(normalizeTelemetryPayload);
     const result = await Telemetry.insertMany(docs, { ordered: false });
+
+    // Stream batch readings into active RxJS rule engine
+    docs.forEach(doc => ruleEngine.processReading(doc));
 
     return res.status(201).json({
       success: true,
