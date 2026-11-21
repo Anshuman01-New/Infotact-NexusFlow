@@ -7,7 +7,10 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "simulate": "node simulator/mockSensor.js",
-    "test": "node scripts/testStorage.js"
+    "test": "node scripts/testCompiler.js && node scripts/testStorage.js",
+    "test:compiler": "node scripts/testCompiler.js",
+    "test:storage": "node scripts/testStorage.js",
+    "benchmark": "node scripts/benchmarkIngestion.js"
   },
   "keywords": [
     "iot",

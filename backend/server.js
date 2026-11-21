@@ -5,6 +5,8 @@ const morgan = require('morgan');
 const { connectDB } = require('./config/database');
 const telemetryRoutes = require('./routes/telemetryRoutes');
 const deviceRoutes = require('./routes/deviceRoutes');
+const workflowRoutes = require('./routes/workflowRoutes');
+const ruleEngine = require('./services/ruleEngine');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -23,12 +25,13 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     service: 'NexusFlow Ingestion & Rule Engine API',
-    version: '1.0.0 (Week 1)',
+    version: '1.2.0 (Week 2 - Logic Engine)',
     timestamp: new Date().toISOString(),
     database: {
       status: dbStatus,
       engine: 'MongoDB Time-Series'
     },
+    ruleEngine: ruleEngine.getStatus(),
     uptime: process.uptime()
   });
 });
@@ -36,6 +39,7 @@ app.get('/api/health', (req, res) => {
 // API Routes
 app.use('/api/telemetry', telemetryRoutes);
 app.use('/api/devices', deviceRoutes);
+app.use('/api/workflows', workflowRoutes);
 
 // Fallback 404 handler
 app.use((req, res) => {
@@ -54,6 +58,7 @@ app.use((err, req, res, next) => {
 // Start Server
 async function startServer() {
   await connectDB();
+  await ruleEngine.initialize();
 
   const server = app.listen(PORT, () => {
     console.log(`\n==================================================`);
@@ -61,6 +66,7 @@ async function startServer() {
     console.log(`  Health Check : http://localhost:${PORT}/api/health`);
     console.log(`  Telemetry API: http://localhost:${PORT}/api/telemetry`);
     console.log(`  Device API   : http://localhost:${PORT}/api/devices`);
+    console.log(`  Workflow API : http://localhost:${PORT}/api/workflows`);
     console.log(`==================================================\n`);
   });
 
