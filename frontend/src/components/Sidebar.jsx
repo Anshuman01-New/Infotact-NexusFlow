@@ -1,5 +1,5 @@
 import React from 'react';
-import { Radio, Sliders, GitCompare, BellRing, Info, Plus } from 'lucide-react';
+import { Radio, Sliders, Calculator, GitCompare, BellRing, Info, Plus } from 'lucide-react';
 
 const NODE_CATALOG = [
   {
@@ -47,26 +47,59 @@ const NODE_CATALOG = [
     items: [
       {
         type: 'filter',
+        label: 'Moving Average (3)',
+        desc: 'Smooths last 3 readings',
+        data: {
+          filterType: 'Moving Average',
+          windowSize: 3
+        }
+      },
+      {
+        type: 'filter',
         label: 'Moving Average (5)',
         desc: 'Smooths last 5 readings',
         data: {
           filterType: 'Moving Average',
           windowSize: 5
         }
+      }
+    ]
+  },
+  {
+    category: '3. Math Operations',
+    color: '#10b981',
+    items: [
+      {
+        type: 'math',
+        label: 'Multiply (× 1.5)',
+        desc: 'Scales metric by 1.5x',
+        data: {
+          operation: 'multiply',
+          operand: 1.5
+        }
       },
       {
-        type: 'filter',
-        label: 'Moving Average (10)',
-        desc: 'Smooths last 10 readings',
+        type: 'math',
+        label: 'Multiply (× 2)',
+        desc: 'Doubles metric value',
         data: {
-          filterType: 'Moving Average',
-          windowSize: 10
+          operation: 'multiply',
+          operand: 2
+        }
+      },
+      {
+        type: 'math',
+        label: 'Offset (+ 10)',
+        desc: 'Adds offset of 10 to metric',
+        data: {
+          operation: 'add',
+          operand: 10
         }
       }
     ]
   },
   {
-    category: '3. Conditions',
+    category: '4. Conditions',
     color: '#f97316',
     items: [
       {
@@ -88,11 +121,21 @@ const NODE_CATALOG = [
           threshold: 120,
           unit: 'kPa'
         }
+      },
+      {
+        type: 'condition',
+        label: 'Vibration >= 5 mm/s',
+        desc: 'Excessive vibration check',
+        data: {
+          operator: '>=',
+          threshold: 5,
+          unit: 'mm/s'
+        }
       }
     ]
   },
   {
-    category: '4. Action Triggers',
+    category: '5. Action Triggers',
     color: '#ef4444',
     items: [
       {
@@ -113,6 +156,16 @@ const NODE_CATALOG = [
           actionType: 'Webhook Alert',
           target: 'https://hooks.factory.internal/alert',
           template: 'POST alert payload'
+        }
+      },
+      {
+        type: 'action',
+        label: 'Incident Log',
+        desc: 'Logs incident to system audit',
+        data: {
+          actionType: 'Incident Log',
+          target: 'System Audit Log',
+          template: 'Warning condition logged'
         }
       }
     ]
@@ -225,9 +278,9 @@ const Sidebar = () => {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, marginBottom: '4px' }}>
-          <Info size={14} /> Week 1 Workflow Tip
+          <Info size={14} /> Week 2 Logic Engine
         </div>
-        Connect <b>Sensor</b> &rarr; <b>Moving Average</b> &rarr; <b>Condition</b> &rarr; <b>SMS Alert</b> to define an IoT rule pipeline.
+        Connect <b>Sensor</b> &rarr; <b>Math / Filter</b> &rarr; <b>Condition</b> &rarr; <b>Action</b>. Use <b>Validate</b> and <b>Test Run</b> to test RxJS compilation.
       </div>
     </aside>
   );

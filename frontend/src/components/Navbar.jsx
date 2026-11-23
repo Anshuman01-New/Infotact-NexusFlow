@@ -66,7 +66,7 @@ const Navbar = ({ activeTab, setActiveTab, onSave, onExport, onClear }) => {
                 fontWeight: 600
               }}
             >
-              WEEK 1
+              WEEK 2
             </span>
           </div>
           <div style={{ fontSize: '11px', color: '#64748b' }}>

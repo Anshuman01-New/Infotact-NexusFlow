@@ -1,6 +1,8 @@
-# NexusFlow - Frontend (Week 1: Visual Graph Builder)
+# NexusFlow - Frontend (Week 1 & Week 2: Visual Rule Builder & Logic Engine)
 
-NexusFlow's frontend provides an intuitive drag-and-drop workflow canvas for configuring IoT stream processing rules without writing code. In **Week 1**, the foundation is established using **React**, **React Flow**, and **Vite**.
+NexusFlow's frontend provides an intuitive drag-and-drop workflow canvas for configuring IoT stream processing rules without writing code.
+- **Week 1**: Visual React Flow canvas, node palette, draggable blocks, and telemetry storage explorer.
+- **Week 2**: Custom **Data Source**, **Math Operation**, and **Action Trigger** nodes, graph JSON serialization, live backend DAG validation, interactive simulation runner, and cloud workflow saving/loading.
 
 ---
 
@@ -10,7 +12,7 @@ NexusFlow's frontend provides an intuitive drag-and-drop workflow canvas for con
 - **Build Tool**: Vite 6+
 - **Visual Graph Builder**: React Flow (`reactflow` 11.11+)
 - **Icons**: Lucide React
-- **HTTP Client**: Axios (configured with Vite `/api` proxy)
+- **HTTP Client**: Axios (configured with Vite `/api` proxy to backend)
 - **Styling**: Industrial Dark Theme CSS with reactive SVG handles
 
 ---
@@ -22,21 +24,22 @@ frontend/
 ├── public/
 ├── src/
 │   ├── components/
-│   │   ├── Navbar.jsx               # Navigation bar, live health indicator & quick actions
-│   │   ├── Sidebar.jsx              # Draggable node palette with categories
+│   │   ├── Navbar.jsx               # Navigation bar, week badge, health status
+│   │   ├── Sidebar.jsx              # Draggable node palette with 5 node categories
 │   │   └── CustomNodes/
-│   │       ├── SensorNode.jsx       # Data source node (e.g., Turbine Sensor)
-│   │       ├── FilterNode.jsx       # Stream filter node (e.g., Moving Average)
-│   │       ├── ConditionNode.jsx    # Logical condition node (e.g., Temp > 80°C)
-│   │       └── ActionNode.jsx       # Trigger action node (e.g., SMS Alert)
+│   │       ├── SensorNode.jsx       # Data Source node (Turbine, Boiler, Motor)
+│   │       ├── FilterNode.jsx       # Stream filter node (Moving Average sliding window)
+│   │       ├── MathNode.jsx         # Week 2: Math operation node (Multiply, Add, Offset, Divide)
+│   │       ├── ConditionNode.jsx    # Logical condition node (>, >=, <, <=, ==)
+│   │       └── ActionNode.jsx       # Action trigger node (SMS Alert, Webhook, Incident Log)
 │   ├── pages/
-│   │   ├── WorkflowBuilder.jsx      # React Flow interactive canvas & inspector
+│   │   ├── WorkflowBuilder.jsx      # Interactive canvas, DAG validator, simulator & inspector
 │   │   ├── Telemetry.jsx            # Live telemetry storage & ingestion explorer
 │   │   ├── Dashboard.jsx            # Week 3 placeholder
 │   │   ├── Devices.jsx              # Device management placeholder
 │   │   └── Alerts.jsx               # Alert log placeholder
 │   ├── services/
-│   │   ├── api.js                   # API client for backend telemetry endpoints
+│   │   ├── api.js                   # API client for telemetry & workflow endpoints
 │   │   └── socket.js                # WebSocket service stub (Week 3)
 │   ├── App.jsx                      # Main app shell & view switcher
 │   ├── index.css                    # Design system & dark theme overrides
@@ -48,70 +51,86 @@ frontend/
 
 ---
 
-## 🧩 Week 1 Custom Node Types
+## 🧩 Supported Visual Node Types (Week 2)
 
-The visual builder supports 4 core node types with custom handles and status badges:
-
-| Node Type | Purpose | Handles | Example Configuration |
-|-----------|---------|---------|-----------------------|
-| **Sensor Node** | Telemetry source | Source (Right) | Device: `TURBINE_001`, Metric: `temperature` |
-| **Filter Node** | Stream transformation | Target (Left), Source (Right) | Type: `Moving Average`, Window: `5` readings |
-| **Condition Node** | Threshold comparison | Target (Left), Source (Right) | Rule: `value > 80°C` |
-| **Action Node** | Notification / dispatch | Target (Left) | Action: `SMS Alert`, Target: `+1 (555) 019-2831` |
+| Node Category | Canonical Type | Handles | Configurable Parameters |
+|---------------|----------------|---------|-------------------------|
+| **1. Data Sources** | `sensor` | Source (Right) | `deviceId` (e.g. `TURBINE_001`), `metric` (`temperature`, `pressure`, `vibration`, `humidity`), `location` |
+| **2. Stream Filters** | `filter` | Target (Left), Source (Right) | `filterType` (`Moving Average`), `windowSize` (e.g. 3 or 5 readings) |
+| **3. Math Operations** | `math` | Target (Left), Source (Right) | `operation` (`multiply`, `add`, `subtract`, `divide`), `operand` (number, e.g. `1.5` or `2`) |
+| **4. Conditions** | `condition` | Target (Left), Source (Right) | `operator` (`>`, `>=`, `<`, `<=`, `==`, `!=`), `threshold` (number), `unit` |
+| **5. Action Triggers** | `action` | Target (Left) | `actionType` (`SMS Alert`, `Webhook Alert`, `Incident Log`), `target` (phone/URL/destination) |
 
 ---
 
-## 🎨 Interactive Features
+## 🎨 Interactive Features (Week 2)
 
-1. **Drag-and-Drop Palette**: Drag any block from the left sidebar palette directly onto the React Flow canvas.
-2. **Visual Workflow Canvas**: Pan, zoom, select nodes, and draw animated connection lines between handles.
-3. **Preloaded Workflow**: Automatically displays the classic NexusFlow pipeline:  
-   `Turbine Sensor` &rarr; `Moving Average (5)` &rarr; `Condition (>80°C)` &rarr; `SMS Alert`.
-4. **Node Inspector**: Click any node on the canvas to open a configuration panel to edit device ID, metric, window size, threshold, or destination.
-5. **JSON Graph Serialization**: Click **"Export JSON"** to view and copy the serialized graph payload (ready for Week 2 stream compilation).
-6. **Telemetry Storage Explorer**: Switch to the **"Telemetry Storage & Data"** tab to test single/batch ingestion and inspect stored readings in MongoDB Time-Series.
+1. **Draggable Node Palette**: Drag and drop any node from the 5 categories on the sidebar palette directly onto the canvas.
+2. **DAG Validation (Backend-Verified)**: Click **"Validate Graph"** on the canvas toolbar to verify that the graph forms a valid Directed Acyclic Graph (DAG) with 0 circular loops, and view the computed topological execution order (Kahn's Algorithm).
+3. **Interactive RxJS Simulation**: Click **"Run Simulation"** to compile the visual graph in the backend and run a stream of sample sensor readings through it. View node-by-node value transformations and dispatched alerts in the browser!
+4. **Cloud Persistence (MongoDB)**: Click **"Save to Cloud"** to validate and persist the workflow into MongoDB. Click **"Load"** to browse and open previously saved workflows.
+5. **Accurate JSON Graph Serialization**: Click the code icon (`< >`) to view the serialized React Flow JSON. Includes **"Copy to Clipboard"** and **"Download .json"**.
+6. **JSON Workflow Import**: Click the upload icon (`↑`) to load any exported `.json` file back onto the canvas.
+7. **Node Inspector Drawer**: Click any node on the canvas to inspect and edit its device ID, window size, math operation, threshold, or target recipient.
 
 ---
 
 ## 🧪 Steps Needed to Test the Week 1 Implementation
 
-Follow these steps to test the Week 1 frontend and its integration with the backend:
-
-### Step 1: Install Dependencies
-Open a terminal in the `frontend/` directory:
-```powershell
-cd frontend
-npm install
-```
-
-### Step 2: Build the Frontend
-Verify that the project compiles cleanly:
-```powershell
-npm run build
-```
-**Expected Output**: `built in ...s` with zero errors.
-
-### Step 3: Start the Vite Development Server
-Run the dev server:
-```powershell
-npm run dev
-```
-Open `http://localhost:3000` in your browser.
-
-### Step 4: Test Visual Workflow Builder (Canvas & Drag-and-Drop)
-1. **View Default Workflow**: Verify that the preloaded 4-node pipeline is displayed (`Turbine Sensor` &rarr; `Moving Average` &rarr; `Condition` &rarr; `SMS Alert`).
-2. **Drag and Drop**: From the left sidebar palette under "1. Data Sources", drag a `Boiler Sensor` block onto an empty spot on the canvas.
-3. **Connect Nodes**: Click and drag from the blue handle on the right of the `Boiler Sensor` to the purple handle on the left of a filter node.
-4. **Inspect & Edit Node**: Click on the `Condition` node. In the inspector drawer on the right, change the threshold from `80` to `90`. Notice the node update in real time.
-5. **Export Graph JSON**: Click the **"Export JSON"** button in the header. Verify that the modal opens with the valid JSON representation of nodes, positions, and edges. Click **"Copy to Clipboard"**.
-
-### Step 5: Test Telemetry Storage & Ingestion Explorer
-1. Ensure the backend server is running on `http://localhost:5000` (check the navbar status badge: `MongoDB Time-Series OK`).
-2. Click the **"Telemetry Storage & Data"** tab in the navbar.
-3. Under **Telemetry Ingestion Tester**, click **"Ingest Single Reading"**. Verify that a green success message appears with the new reading ID.
-4. Click **"Batch Ingest (10 Readings)"**. Verify that 10 readings are saved and immediately appear in the **Time-Series Telemetry Stream** table.
-5. In the backend terminal, start the mock sensor:
+1. **Install and build**:
    ```powershell
-   npm run simulate
+   cd frontend
+   npm install
+   npm run build
    ```
-   Click **"Refresh"** on the frontend table to see continuous sensor readings populating the MongoDB Time-Series collection!
+2. **Start the frontend**:
+   ```powershell
+   npm run dev
+   ```
+   Open `http://localhost:3000` in your browser.
+3. **Test canvas drag-and-drop**: Drag blocks from the left sidebar onto the canvas and connect them with edges.
+4. **Test telemetry explorer**: Click the **"Telemetry Storage & Data"** tab to test single/batch ingestion into MongoDB Time-Series.
+
+---
+
+## 🧪 Steps Needed to Test the Week 2 Implementation
+
+Follow these steps in your browser (`http://localhost:3000`) with both frontend and backend running:
+
+### Step 1: Test Custom Math Operation Node
+1. In the left sidebar palette under **"3. Math Operations"**, drag a **"Multiply (× 1.5)"** block onto the canvas.
+2. Click on the node to open the **Node Inspector** drawer on the right.
+3. Change the operation to `multiply` and operand to `2` (or choose `Add / Offset`).
+4. Connect the output of a **Turbine Sensor** into the left handle of the Math node, and the output of the Math node into a **Condition** node.
+
+### Step 2: Test Graph Validation (DAG Verification & Cycle Detection)
+1. On the top canvas toolbar, click **"Validate Graph"**.
+2. **Valid Graph Test**:
+   - For a standard pipeline (`Sensor` &rarr; `Filter / Math` &rarr; `Condition` &rarr; `Action`), verify that a green modal appears showing:
+     - `Graph Structure Valid (DAG)`
+     - Topological Execution Order (e.g., `node-1 ➔ node-2 ➔ node-3 ➔ node-4`).
+3. **Cycle Detection Test**:
+   - Draw an edge from the output of the `Condition` node backward into the input of the `Sensor` or `Filter` node (creating a circular loop).
+   - Click **"Validate Graph"**.
+   - Verify that the modal flags the error: `Cycle detected in workflow graph! Workflows must be a Directed Acyclic Graph (DAG) without circular loops.`
+   - Delete the loop edge to restore validity.
+
+### Step 3: Test Interactive RxJS Simulation Runner
+1. With a valid workflow on the canvas (e.g. `Turbine Sensor (temperature)` &rarr; `Moving Average (3)` &rarr; `Condition (>80°C)` &rarr; `SMS Alert`), click **"Run Simulation"**.
+2. Verify that the simulation runs against mock readings (72°C, 76.5°C, 84°C, 92.5°C):
+   - Check the **Readings Evaluated** count (`4`).
+   - Check the **Dispatched Alerts** count (`1`).
+   - Inspect the **Node Step Traces** showing each transformation step (Sensor &rarr; MovingAvg &rarr; Condition &rarr; Dispatched Alert).
+
+### Step 4: Test Cloud Saving and Loading to MongoDB
+1. Enter a custom workflow name in the header input (e.g., `"Assembly Line Turbine Alert"`).
+2. Click **"Save to Cloud"**.
+3. Verify that a green toast notification confirms: `Saved & Deployed 'Assembly Line Turbine Alert' to MongoDB!`.
+4. Clear the canvas by selecting and deleting nodes, or refresh the page.
+5. Click **"Load"** on the toolbar. Click on your saved workflow in the list to reload all nodes and connections back onto the canvas.
+
+### Step 5: Test JSON Serialization, Download & Import
+1. Click the code icon (`< >`) in the toolbar to open the **Serialized Graph JSON** viewer.
+2. Verify that all nodes, handles, positions, and edges are accurately serialized.
+3. Click **"Download .json"** to save the workflow file to your computer.
+4. Click the upload icon (`↑`) on the toolbar and select the downloaded file to verify that the workflow imports accurately.

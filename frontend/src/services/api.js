@@ -55,6 +55,55 @@ export const api = {
   registerDevice: async (deviceData) => {
     const response = await apiClient.post('/devices', deviceData);
     return response.data;
+  },
+
+  // Week 2: Workflows & Stream Compiler
+  validateWorkflow: async (graph) => {
+    const response = await apiClient.post('/workflows/validate', { graph });
+    return response.data;
+  },
+
+  testCompileWorkflow: async (graph, mockReadings) => {
+    const response = await apiClient.post('/workflows/compile-test', {
+      graph,
+      mockReadings
+    });
+    return response.data;
+  },
+
+  getWorkflows: async () => {
+    const response = await apiClient.get('/workflows');
+    return response.data;
+  },
+
+  getWorkflowById: async (id) => {
+    const response = await apiClient.get(`/workflows/${id}`);
+    return response.data;
+  },
+
+  createWorkflow: async (workflowData) => {
+    const response = await apiClient.post('/workflows', workflowData);
+    return response.data;
+  },
+
+  updateWorkflow: async (id, workflowData) => {
+    const response = await apiClient.put(`/workflows/${id}`, workflowData);
+    return response.data;
+  },
+
+  deleteWorkflow: async (id) => {
+    const response = await apiClient.delete(`/workflows/${id}`);
+    return response.data;
+  },
+
+  toggleWorkflow: async (id) => {
+    const response = await apiClient.patch(`/workflows/${id}/toggle`);
+    return response.data;
+  },
+
+  getEngineStatus: async () => {
+    const response = await apiClient.get('/workflows/engine/status');
+    return response.data;
   }
 };
 
