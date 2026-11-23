@@ -1,6 +1,8 @@
-# NexusFlow - Backend (Week 1: Telemetry Ingestion & Storage)
+# NexusFlow - Backend (Week 1 & Week 2: Telemetry Ingestion & Stream Logic Engine)
 
-NexusFlow's backend serves as the ingestion and stream-processing engine for high-volume IoT sensor measurements. In **Week 1**, the backend foundation is established using **Node.js**, **Express**, and **MongoDB Time-Series Collections**.
+NexusFlow's backend serves as the ingestion and stream-processing engine for high-volume IoT sensor measurements.
+- **Week 1**: Ingestion API, device registry, and storage in **MongoDB Time-Series Collections**.
+- **Week 2**: Visual graph parsing, DAG cycle detection, and dynamic **RxJS Stream Pipeline Compilation** (`Sensor` &rarr; `Filter / Math` &rarr; `Condition` &rarr; `Action`).
 
 ---
 
@@ -10,8 +12,10 @@ NexusFlow's backend serves as the ingestion and stream-processing engine for hig
 - **API Framework**: Express.js
 - **Database**: MongoDB (v6.0+) with **native Time-Series Collections** (`telemetries`)
 - **ODM**: Mongoose
+- **Stream Processing Engine**: RxJS (`Subject`, `filter`, `map`, `scan`, `tap`)
+- **Graph Compilation**: Topological Sorting (Kahn's Algorithm) & Cycle Detection for Directed Acyclic Graphs (DAGs)
 - **IoT Simulator**: Native Node.js HTTP stream simulator (`simulator/mockSensor.js`)
-- **Reactive Engine Ready**: RxJS installed for Week 2 stream compilation
+- **Benchmark Suite**: High-throughput benchmark tool (`scripts/benchmarkIngestion.js`)
 
 ---
 
@@ -20,32 +24,40 @@ NexusFlow's backend serves as the ingestion and stream-processing engine for hig
 ```
 backend/
 ├── config/
-│   └── database.js           # MongoDB connection & Time-Series collection initializer
+│   └── database.js             # MongoDB connection & Time-Series collection initializer
 ├── controllers/
-│   ├── telemetryController.js # Ingestion, batch writes, queries & statistics
-│   └── deviceController.js    # Device registry & status tracking
+│   ├── telemetryController.js  # Ingestion, batch writes, queries & pipeline streaming
+│   ├── deviceController.js     # Device registry & status tracking
+│   └── workflowController.js   # Graph validation, test compilation & CRUD
 ├── models/
-│   ├── Telemetry.js          # Mongoose Time-Series schema (timeField: timestamp, metaField: metadata)
-│   ├── Device.js             # IoT device registry schema
-│   ├── Workflow.js           # Workflow schema (Week 2 preparation)
-│   └── Alert.js              # Alert history schema (Week 4 preparation)
+│   ├── Telemetry.js            # Mongoose Time-Series schema (timeField: timestamp, metaField: metadata)
+│   ├── Device.js               # IoT device registry schema
+│   ├── Workflow.js             # Serialized workflow schema (nodes, edges, isActive)
+│   └── Alert.js                # Dispatched alert log schema
 ├── routes/
-│   ├── telemetryRoutes.js    # /api/telemetry routes
-│   └── deviceRoutes.js       # /api/devices routes
+│   ├── telemetryRoutes.js      # /api/telemetry routes
+│   ├── deviceRoutes.js         # /api/devices routes
+│   └── workflowRoutes.js       # /api/workflows routes
 ├── scripts/
-│   └── testStorage.js        # Automated storage verification script
+│   ├── testCompiler.js         # Week 2: Graph parser & RxJS compilation test suite
+│   ├── testStorage.js          # Week 1: Automated storage verification script
+│   └── benchmarkIngestion.js   # Mid-Project Review: 5,000 writes/sec benchmark tool
+├── services/
+│   ├── streamCompiler.js       # Graph validation, DAG sorting & RxJS pipeline compiler
+│   ├── ruleEngine.js           # Central active pipeline manager & telemetry dispatcher
+│   └── alertService.js         # Mock SMS/Webhook dispatcher & alert persistence
 ├── simulator/
-│   └── mockSensor.js         # Configurable IoT device simulator
-├── .env.example              # Environment variables template
-├── package.json              # Backend dependencies and scripts
-└── server.js                 # Express server entrypoint
+│   └── mockSensor.js           # Configurable IoT device simulator
+├── .env.example                # Environment variables template
+├── package.json                # Backend dependencies and scripts
+└── server.js                   # Express server entrypoint
 ```
 
 ---
 
 ## ⚙️ Environment Variables
 
-Create a `.env` file in the `backend/` directory (or copy `.env.example`):
+Create a `.env` file in the `backend/` directory:
 
 ```env
 PORT=5000
@@ -57,113 +69,155 @@ NODE_ENV=development
 
 ## 📡 REST API Reference
 
-### 1. Telemetry Ingestion
-- **`POST /api/telemetry`**
-  - Ingests a single telemetry reading and updates the device's `lastSeen` status.
-  - **Body Example**:
+### 1. Telemetry Ingestion & Storage (Week 1)
+- **`POST /api/telemetry`**: Ingest a single reading, store in Time-Series, and pass into active RxJS pipelines.
+- **`POST /api/telemetry/batch`**: Bulk write ingestion using `Telemetry.insertMany(docs, { ordered: false })`.
+- **`GET /api/telemetry`**: Query historical telemetry (`deviceId`, `startDate`, `endDate`, `limit`, `sort`).
+- **`GET /api/telemetry/latest`**: Retrieve the most recent reading for each device.
+- **`GET /api/telemetry/stats`**: Get collection stats (count, active devices, storage engine).
+
+### 2. Logic Engine & Workflow APIs (Week 2)
+- **`POST /api/workflows/validate`**: Validates a visual graph JSON without saving. Checks node configurations, connectivity, and verifies DAG cycle freedom using Kahn's algorithm.
+  - **Sample Request**:
     ```json
     {
-      "deviceId": "TURBINE_001",
-      "temperature": 84.5,
-      "pressure": 112.3,
-      "vibration": 3.2,
-      "humidity": 45.0,
-      "metadata": {
-        "deviceId": "TURBINE_001",
-        "deviceType": "Turbine Sensor",
-        "location": "Factory Floor Block-A"
+      "graph": {
+        "nodes": [
+          { "id": "1", "type": "sensor", "data": { "deviceId": "TURBINE_001", "metric": "temperature" } },
+          { "id": "2", "type": "filter", "data": { "windowSize": 3 } },
+          { "id": "3", "type": "condition", "data": { "operator": ">", "threshold": 80 } },
+          { "id": "4", "type": "action", "data": { "actionType": "SMS Alert", "target": "+1555" } }
+        ],
+        "edges": [
+          { "source": "1", "target": "2" },
+          { "source": "2", "target": "3" },
+          { "source": "3", "target": "4" }
+        ]
       }
     }
     ```
-
-### 2. High-Throughput Batch Ingestion
-- **`POST /api/telemetry/batch`**
-  - Accepts an array of telemetry readings for bulk write performance.
-  - **Body Example**:
+  - **Sample Response**:
     ```json
-    [
-      { "deviceId": "TURBINE_001", "temperature": 82.1, "pressure": 105.0 },
-      { "deviceId": "MOTOR_102", "temperature": 74.0, "vibration": 2.1 }
-    ]
+    {
+      "success": true,
+      "valid": true,
+      "errors": [],
+      "warnings": [],
+      "executionOrder": ["1", "2", "3", "4"],
+      "nodeCount": 4,
+      "edgeCount": 3
+    }
     ```
-
-### 3. Historical Telemetry Queries
-- **`GET /api/telemetry?deviceId=TURBINE_001&limit=50&sort=desc`**
-  - Query parameters:
-    - `deviceId`: Filter by device ID
-    - `startDate`, `endDate`: ISO timestamp range filter
-    - `limit`: Number of readings (default 100, max 1000)
-    - `sort`: `desc` (newest first) or `asc`
-
-### 4. Latest Readings & Statistics
-- **`GET /api/telemetry/latest`**: Returns the most recent reading for each active device.
-- **`GET /api/telemetry/stats`**: Returns total readings count, active devices count, and storage metadata.
-- **`GET /api/devices`**: Lists registered IoT devices and their current status.
-- **`GET /api/health`**: Health check reporting MongoDB connection and server uptime.
+- **`POST /api/workflows/compile-test`**: Compiles an RxJS pipeline and runs mock sensor readings through it, returning step-by-step traces and triggered alerts.
+- **`GET /api/workflows`**: List all saved workflows.
+- **`POST /api/workflows`**: Create a new workflow, validate its structure, and deploy it to the active rule engine.
+- **`GET /api/workflows/:id`**: Get workflow details by ID.
+- **`PUT /api/workflows/:id`**: Update workflow configuration and reload in the rule engine.
+- **`DELETE /api/workflows/:id`**: Delete workflow and unregister its pipeline.
+- **`PATCH /api/workflows/:id/toggle`**: Toggle active/inactive deployment state.
+- **`GET /api/workflows/engine/status`**: View all currently deployed pipelines and execution metrics.
 
 ---
 
 ## 🧪 Steps Needed to Test the Week 1 Implementation
 
-Follow these steps to thoroughly test the Week 1 backend implementation:
+1. **Verify MongoDB is running**:
+   ```powershell
+   Get-Service -Name MongoDB
+   ```
+2. **Run the storage test**:
+   ```powershell
+   cd backend
+   npm run test:storage
+   ```
+   *Verifies native Time-Series collection creation, single write, batch write, and querying.*
+3. **Start the Express server**:
+   ```powershell
+   npm run dev
+   ```
+4. **Run the IoT mock sensor simulator**:
+   ```powershell
+   npm run simulate
+   ```
 
-### Step 1: Ensure MongoDB is Running
-Make sure MongoDB is running on your machine:
-```powershell
-# Windows PowerShell
-Get-Service -Name MongoDB
-```
-*(If MongoDB is not started, run `Start-Service MongoDB` or launch `mongod` in a terminal).*
+---
 
-### Step 2: Install Backend Dependencies
-Navigate to the backend folder:
+## 🧪 Steps Needed to Test the Week 2 Implementation
+
+Follow these steps to thoroughly test the Week 2 Logic Engine, Stream Compiler, and Mid-Project Review benchmark:
+
+### Step 1: Run the Automated Logic Engine & Stream Compiler Test Suite
+Execute the dedicated Week 2 verification script:
 ```powershell
 cd backend
-npm install
+npm run test:compiler
 ```
+**What this validates**:
+- **Test 1**: Verifies valid DAG graph structures and asserts topological execution order (`n1 -> n2 -> n3 -> n4`).
+- **Test 2**: Introduces a circular back-edge (`A -> B -> C -> A`) and confirms Kahn's algorithm catches the cycle and flags it as invalid.
+- **Test 3**: Tests invalid node configurations (missing `deviceId`, invalid `operator`, self-loops) and asserts informative error diagnostics.
+- **Test 4**: Compiles a real RxJS pipeline with a Moving Average filter (window of 3 samples). Feeds in 70°C, 74°C, 96°C, and 92°C, verifying that the alert only fires when the sliding average exceeds 80°C (at 87.33°C).
+- **Test 5**: Tests Math Operation nodes (`multiply` / scaling by 1.5x) feeding into threshold checks.
+- **Test 6**: Tests the interactive simulation helper (`testRun`) against test batches.
+- **Test 7**: Connects to MongoDB, saves a workflow, deploys it to `RuleEngine`, processes live readings via `ruleEngine.processReading(...)`, and confirms automatic alert dispatching.
 
-### Step 3: Run the Automated Storage & Ingestion Verification Test
-Execute the test script to verify MongoDB connection, native Time-Series collection creation, single write, batch write, historical queries, and device indexing:
+**Expected Result**: `TEST SUMMARY: 17 PASSED, 0 FAILED`.
+
+### Step 2: Run the Mid-Project Review Ingestion Benchmark (5,000 writes/sec target)
+Execute the mid-project benchmark tool:
 ```powershell
-npm test
+npm run benchmark
 ```
-**Expected Output**:
-- `[MongoDB] Connected successfully`
-- `SUCCESS: Native MongoDB Time-Series collection verified!` (with `granularity: seconds`)
-- `SUCCESS: Reading saved with ID: ...`
-- `SUCCESS: Inserted 5 batch readings.`
-- `ALL WEEK 1 BACKEND & DATABASE TESTS PASSED SUCCESSFULLY!`
+*(Optionally specify parameters: `node scripts/benchmarkIngestion.js --count 5000 --batchSize 1000`)*
 
-### Step 4: Start the Express Server
-Start the development server:
+**Expected Result**:
+- Measures throughput on native MongoDB Time-Series collection (typically **5,000+ writes/second**).
+- Computes approximate storage footprint (~10 bytes per compressed reading).
+
+### Step 3: Test Graph Validation via HTTP API
+With the backend server running (`npm run dev`), test the `/api/workflows/validate` endpoint using PowerShell or curl:
 ```powershell
-npm run dev
-# or: npm start
-```
-**Expected Output**:
-Server listens on `http://localhost:5000`. You can test the health endpoint in your browser or curl:
-```bash
-curl http://localhost:5000/api/health
-```
+$body = @{
+    graph = @{
+        nodes = @(
+            @{ id = "s1"; type = "sensor"; data = @{ deviceId = "TURBINE_001"; metric = "temperature" } },
+            @{ id = "c1"; type = "condition"; data = @{ operator = ">"; threshold = 85 } },
+            @{ id = "a1"; type = "action"; data = @{ actionType = "SMS Alert"; target = "+1555" } }
+        )
+        edges = @(
+            @{ source = "s1"; target = "c1" },
+            @{ source = "c1"; target = "a1" }
+        )
+    }
+} | ConvertTo-Json -Depth 5
 
-### Step 5: Run the IoT Mock Sensor Simulator
-Open a second terminal window in the `backend/` directory and run:
+Invoke-RestMethod -Uri "http://localhost:5000/api/workflows/validate" -Method Post -Body $body -ContentType "application/json"
+```
+**Expected Output**: `{"success":true,"valid":true,"errors":[],"executionOrder":["s1","c1","a1"],"nodeCount":3,"edgeCount":2}`.
+
+### Step 4: Test Interactive Simulation API
+Run a test stream through the compiled pipeline via HTTP:
 ```powershell
-npm run simulate
-```
-- The simulator will generate readings for `TURBINE_001`, `TURBINE_002`, `PUMP_101`, and `BOILER_005` every second and post them to `http://localhost:5000/api/telemetry`.
-- **Optional CLI options**:
-  ```powershell
-  # Run for 20 readings then exit
-  node simulator/mockSensor.js --count 20
+$sim = @{
+    graph = @{
+        nodes = @(
+            @{ id = "s1"; type = "sensor"; data = @{ deviceId = "TURBINE_001"; metric = "temperature" } },
+            @{ id = "m1"; type = "math"; data = @{ operation = "multiply"; operand = 2 } },
+            @{ id = "c1"; type = "condition"; data = @{ operator = ">"; threshold = 150 } },
+            @{ id = "a1"; type = "action"; data = @{ actionType = "SMS Alert"; target = "Operator" } }
+        )
+        edges = @(
+            @{ source = "s1"; target = "m1" },
+            @{ source = "m1"; target = "c1" },
+            @{ source = "c1"; target = "a1" }
+        )
+    }
+    mockReadings = @(
+        @{ deviceId = "TURBINE_001"; temperature = 70 },
+        @{ deviceId = "TURBINE_001"; temperature = 85 }
+    )
+} | ConvertTo-Json -Depth 5
 
-  # High-throughput batch mode (send 50 readings per batch)
-  node simulator/mockSensor.js --batch 50 --count 500 --interval 200
-  ```
-
-### Step 6: Query Ingested Readings
-Verify the readings in MongoDB by requesting the statistics and recent telemetry:
-```powershell
-Invoke-RestMethod -Uri "http://localhost:5000/api/telemetry/stats" -Method Get
-Invoke-RestMethod -Uri "http://localhost:5000/api/telemetry?limit=5" -Method Get
+Invoke-RestMethod -Uri "http://localhost:5000/api/workflows/compile-test" -Method Post -Body $sim -ContentType "application/json"
 ```
+**Expected Output**: Reading 1 (70 * 2 = 140) produces no alert. Reading 2 (85 * 2 = 170) evaluates `170 > 150` = true, dispatching an alert with full execution trace.
