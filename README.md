@@ -1,115 +1,64 @@
-# 1. NexusFlow - Project Overview (Simple Explanation)
+# NexusFlow: Visual IoT Telemetry & Rule Engine
 
-**NexusFlow** is a visual, no-code rule engine designed for Internet of Things (IoT) telemetry data. It allows non-technical users, such as factory managers, to create and manage automation rules using a drag-and-drop interface instead of writing code.
-
-In a factory environment, machines such as turbines, motors, boilers, and cooling systems continuously generate sensor data. These sensors monitor values like:
-
-- Temperature
-- Pressure
-- Speed
-- Vibration
-- Humidity
-
-NexusFlow receives this telemetry data, stores it, processes it, and evaluates it against user-defined workflows.
-
-For example, a factory manager may want to receive an alert whenever a turbine's average temperature exceeds **80°C**. Instead of asking a developer to implement the logic, the manager can visually create the following workflow:
-
-**Sensor → Moving Average Filter → Condition → SMS Alert**
-
-The backend interprets this workflow and automatically executes it whenever new sensor readings arrive.
-
-## Core Idea
-
-Rather than modifying application code every time a business rule changes, users can create, update, and manage rules visually by connecting workflow nodes.
-
-## Example Workflow
-
-| Step | Node | Purpose |
-|--------|--------|---------|
-| 1 | Turbine Sensor | Continuously generates temperature readings. |
-| 2 | Moving Average Filter | Calculates the average of recent readings. |
-| 3 | Condition | Checks whether the average exceeds a specified threshold. |
-| 4 | SMS Alert | Sends a notification when the condition evaluates to true. |
+NexusFlow is a visual, no-code rule engine for Internet of Things (IoT) telemetry. It allows factory floor managers and operators to create dynamic stream-processing rules by dragging and connecting blocks on a visual canvas instead of requiring developers to hardcode business logic.
 
 ---
 
-# 2. Problems NexusFlow Solves
+## 🚀 4-Week Development Plan & Status
 
-## Problem 1: Hardcoded Business Logic
+- **Week 1: Establish the Foundation** ✅ *(Completed)*
+  - **Backend**: Node.js & Express server, MongoDB connection, native Time-Series collection (`telemetries`), ingestion endpoints (`/api/telemetry`, `/api/telemetry/batch`), query APIs, automated storage tests, and mock sensor simulator.
+  - **Frontend**: Vite + React, React Flow integration, custom node types (Sensor, Filter, Condition, Action), draggable sidebar palette, interactive canvas, node inspector, JSON graph serialization, and live telemetry storage explorer.
+  - **Result**: Mock readings can be stored into MongoDB Time-Series collections, and basic visual workflows can be constructed and serialized.
 
-Traditional applications often contain business rules directly in the source code.
+- **Week 2: Build the Logic Engine** ✅ *(Completed)*
+  - **Backend**: Graph parser, DAG cycle detection, topological execution sorting (Kahn's algorithm), dynamic RxJS pipeline compiler (`Sensor` &rarr; `Moving Average / Math Operation` &rarr; `Condition` &rarr; `Action Trigger`), and in-memory rule engine dispatcher.
+  - **Frontend**: Custom Data Source, Math Operation, and Action Trigger nodes, backend DAG graph validation integration, interactive in-browser simulation runner, MongoDB cloud workflow persistence, and JSON download/import.
+  - **Mid-Project Demonstrations**: 
+    - MongoDB Time-Series collections benchmarked at **>5,000 writes/second** with ~9.9 bytes/reading footprint.
+    - Accurate frontend serialization of complex visual graphs into valid JSON with bidirectional import/export.
 
-Example:
+- **Week 3: Real-Time Execution** ⏳ *(Upcoming)*
+  - Live pipeline execution with incoming telemetry, Socket.IO real-time event push, and live Recharts telemetry dashboard.
 
-```java
-if (temperature > 80) {
-    sendAlert();
-}
-```
-
-If a manager later decides that the threshold should be **90°C** instead of **80°C**, a developer must typically:
-
-1. Modify the code.
-2. Rebuild the application.
-3. Redeploy the application.
-
-This process is slow and creates dependency on developers for simple business-rule changes.
-
-### NexusFlow Solution
-
-NexusFlow provides a visual rule editor where users can modify thresholds, conditions, and workflows without changing application code or performing redeployments.
+- **Week 4: Alerts & Final Polish** ⏳ *(Upcoming)*
+  - Webhook & mock SMS dispatching, visual wire glow effects, cooldown deduplication, and final integration.
 
 ---
 
-## Problem 2: High-Volume Sensor Data
+## 🏃 Quick Start Guide
 
-IoT systems generate large amounts of telemetry data continuously.
+### 1. Prerequisites
+- **Node.js** (v18+ or v22+)
+- **MongoDB** (v6.0+ or v8.0+) running locally on port 27017
 
-For example:
-
-- 100 machines
-- 10 readings per second from each machine
-
-Result:
-
-```text
-100 × 10 = 1,000 readings per second
+### 2. Backend Setup & Automated Verification
+```powershell
+cd backend
+npm install
+npm run test:compiler    # Runs Week 2 Logic Engine & RxJS Compiler test suite (17 checks)
+npm run test:storage     # Runs Week 1 Time-Series storage verification
+npm run benchmark        # Runs Mid-Project Review 5,000 writes/sec benchmark
+npm run dev              # Starts backend on http://localhost:5000
 ```
 
-The system must be capable of:
+### 3. Frontend Setup & Run
+In a new terminal:
+```powershell
+cd frontend
+npm install
+npm run dev              # Starts frontend on http://localhost:3000
+```
 
-- Receiving incoming sensor data efficiently
-- Storing telemetry data reliably
-- Processing data in real time
-- Evaluating rules continuously
-- Presenting meaningful insights to users
+### 4. Run Mock Sensor Simulator
+In a separate terminal:
+```powershell
+cd backend
+npm run simulate         # Streams simulated sensor readings into the ingestion API
+```
 
-### Important Architectural Distinction
+---
 
-Telemetry storage and rule processing are separate responsibilities:
-
-- **MongoDB** stores sensor readings and historical telemetry data.
-- **RxJS Rule Engine** processes incoming data streams and evaluates user-defined workflows and conditions.
-
-This separation allows NexusFlow to handle large-scale telemetry storage while simultaneously performing real-time rule execution.
-
-# 3. End-to-End Application Workflow
-
-1. **User logs in:** The factory manager opens the React application and accesses the dashboard.
-
-2. **Creates a visual workflow:** The manager opens the graph builder and drags nodes onto the canvas.
-
-3. **Connects the nodes:** For example:  
-   `Sensor → Moving Average → Condition → SMS Alert`
-
-4. **Saves the workflow:** React Flow's graph data is serialized into JSON and sent to the backend.
-
-5. **Backend compiles the workflow:** Node.js reads the JSON, interprets the nodes and connections, validates the graph, and creates an executable RxJS pipeline.
-
-6. **Sensor data arrives:** Mock IoT devices send readings to an Express ingestion endpoint.
-
-7. **Data is stored and processed:** MongoDB stores telemetry while the RxJS pipeline evaluates incoming readings.
-
-8. **Alert is generated:** When a rule condition is satisfied, the backend triggers a mock SMS or webhook.
-
-9. **Dashboard updates:** WebSockets deliver live readings and alerts to the React frontend.
+## 📖 Subproject Documentation & Testing Guides
+- [Backend Documentation & Testing Guide (Week 1 & 2)](file:///backend/README.md)
+- [Frontend Documentation & Testing Guide (Week 1 & 2)](file:///frontend/README.md)
