@@ -1,32 +1,255 @@
-# NexusFlow: Visual IoT Telemetry & Rule Engine
+# NexusFlow
+### Visual IoT Telemetry & Rule Engine
 
-NexusFlow is a visual, no-code rule engine for Internet of Things (IoT) telemetry. It allows factory floor managers and operators to create dynamic stream-processing rules by dragging and connecting blocks on a visual canvas instead of requiring developers to hardcode business logic.
-
----
-
-## 🚀 4-Week Development Plan & Status
-
-- **Week 1: Establish the Foundation** ✅ *(Completed)*
-  - **Backend**: Node.js & Express server, MongoDB connection, native Time-Series collection (`telemetries`), ingestion endpoints (`/api/telemetry`, `/api/telemetry/batch`), query APIs, automated storage tests, and mock sensor simulator.
-  - **Frontend**: Vite + React, React Flow integration, custom node types (Sensor, Filter, Condition, Action), draggable sidebar palette, interactive canvas, node inspector, JSON graph serialization, and live telemetry storage explorer.
-  - **Result**: Mock readings can be stored into MongoDB Time-Series collections, and basic visual workflows can be constructed and serialized.
-
-- **Week 2: Build the Logic Engine** ✅ *(Completed)*
-  - **Backend**: Graph parser, DAG cycle detection, topological execution sorting (Kahn's algorithm), dynamic RxJS pipeline compiler (`Sensor` &rarr; `Moving Average / Math Operation` &rarr; `Condition` &rarr; `Action Trigger`), and in-memory rule engine dispatcher.
-  - **Frontend**: Custom Data Source, Math Operation, and Action Trigger nodes, backend DAG graph validation integration, interactive in-browser simulation runner, MongoDB cloud workflow persistence, and JSON download/import.
-  - **Mid-Project Demonstrations**: 
-    - MongoDB Time-Series collections benchmarked at **>5,000 writes/second** with ~9.9 bytes/reading footprint.
-    - Accurate frontend serialization of complex visual graphs into valid JSON with bidirectional import/export.
-
-- **Week 3: Real-Time Execution** ⏳ *(Upcoming)*
-  - Live pipeline execution with incoming telemetry, Socket.IO real-time event push, and live Recharts telemetry dashboard.
-
-- **Week 4: Alerts & Final Polish** ⏳ *(Upcoming)*
-  - Webhook & mock SMS dispatching, visual wire glow effects, cooldown deduplication, and final integration.
+NexusFlow is a visual, no-code IoT telemetry processing platform that enables users to create monitoring and automation workflows using a drag-and-drop interface instead of writing code. Users can visually connect nodes such as sensors, filters, mathematical operations, conditions, and actions to build real-time processing pipelines for industrial telemetry data. 
 
 ---
 
-## 🏃 Quick Start Guide
+## 🚀 Project Overview
+
+Modern industrial environments generate large volumes of sensor data from turbines, motors, boilers, cooling systems, and other equipment. Traditional monitoring solutions often require business rules to be hardcoded by developers, making changes slow and costly.
+
+NexusFlow solves this problem by allowing users to:
+
+- Create workflows visually through drag-and-drop nodes.
+- Store and query telemetry in MongoDB Time-Series Collections.
+- Validate workflow structures using DAG validation.
+- Compile visual workflows into executable RxJS stream pipelines.
+- Simulate workflow execution before deployment.
+- Trigger actions such as alerts when conditions are met.
+- Save, load, and manage workflows from the cloud. 
+
+---
+
+## ✨ Key Features
+
+### Week 1
+- Telemetry ingestion APIs
+- MongoDB Time-Series storage
+- Device registry and tracking
+- Historical telemetry querying
+- Telemetry simulator
+- Visual workflow canvas foundation 
+
+### Week 2
+- Custom workflow nodes
+- Graph serialization
+- DAG validation using Kahn's Algorithm
+- Cycle detection
+- RxJS stream pipeline compilation
+- Interactive workflow simulation
+- Workflow persistence and deployment
+- Workflow execution monitoring 
+
+---
+
+# 🏗️ System Architecture
+
+```text
+┌──────────────────────────────────────┐
+│               USER                   │
+└──────────────────┬───────────────────┘
+                   │
+                   ▼
+┌──────────────────────────────────────┐
+│            React Frontend            │
+│                                      │
+│  • Workflow Builder (React Flow)     │
+│  • Telemetry Explorer                │
+│  • Node Inspector                    │
+│  • Simulation Results                │
+│  • Workflow Management               │
+└──────────────────┬───────────────────┘
+                   │ REST API
+                   ▼
+┌──────────────────────────────────────┐
+│         Node.js + Express API        │
+│                                      │
+│ • Telemetry Controller               │
+│ • Workflow Controller                │
+│ • Device Controller                  │
+└───────────────┬───────────────┬──────┘
+                │               │
+                │               │
+                ▼               ▼
+
+┌───────────────────────┐   ┌─────────────────────┐
+│   MongoDB Time-Series │   │      Rule Engine    │
+│                       │   │                     │
+│ • Telemetry Storage   │   │ • Graph Validation  │
+│ • Historical Queries  │   │ • DAG Detection     │
+│ • Batch Ingestion     │   │ • RxJS Compilation  │
+└───────────────────────┘   │ • Stream Execution  │
+                            └──────────┬──────────┘
+                                       │
+                                       ▼
+                            ┌─────────────────────┐
+                            │ Alert Service       │
+                            │                     │
+                            │ • SMS Alert         │
+                            │ • Webhook Alert     │
+                            │ • Incident Log      │
+                            └─────────────────────┘
+```
+
+### Technology Stack
+
+#### Frontend
+- React
+- Vite
+- React Flow
+- Axios
+- Lucide React 
+
+#### Backend
+- Node.js
+- Express.js
+- RxJS
+- Mongoose 
+
+#### Database
+- MongoDB Time-Series Collections 
+
+---
+
+# 🔄 End-to-End Process Flow
+
+```text
+┌───────────────┐
+│ User Creates  │
+│ Workflow      │
+└───────┬───────┘
+        │
+        ▼
+┌───────────────────────────┐
+│ Drag & Drop Nodes         │
+│ Sensor → Filter → Action  │
+└───────────┬───────────────┘
+            │
+            ▼
+┌───────────────────────────┐
+│ Serialize Workflow        │
+│ To JSON                   │
+└───────────┬───────────────┘
+            │
+            ▼
+┌───────────────────────────┐
+│ Backend Validation        │
+│ - Validate Nodes          │
+│ - Validate Connections    │
+│ - Detect Cycles           │
+└───────────┬───────────────┘
+            │
+            ▼
+┌───────────────────────────┐
+│ Graph Compilation         │
+│ JSON → RxJS Pipeline      │
+└───────────┬───────────────┘
+            │
+            ▼
+┌───────────────────────────┐
+│ Workflow Deployment       │
+└───────────┬───────────────┘
+            │
+            ▼
+┌───────────────────────────┐
+│ Sensor Readings Arrive    │
+│ Through Ingestion API     │
+└───────────┬───────────────┘
+            │
+     ┌──────┴──────┐
+     │             │
+     ▼             ▼
+┌───────────┐ ┌─────────────┐
+│ Store in  │ │ Process Via │
+│ MongoDB   │ │ RxJS Engine │
+└─────┬─────┘ └──────┬──────┘
+      │              │
+      │              ▼
+      │      ┌─────────────┐
+      │      │ Conditions  │
+      │      │ Evaluated   │
+      │      └──────┬──────┘
+      │             │
+      │     True?
+      │             │
+      │             ▼
+      │      ┌─────────────┐
+      │      │ Trigger     │
+      │      │ Alert       │
+      │      └─────────────┘
+      │
+      ▼
+┌─────────────┐
+│ Historical  │
+│ Queries     │
+└─────────────┘
+```
+
+## ⚙️ Example Workflow Execution
+
+```mermaid
+flowchart LR
+
+    Sensor["🌡️ Turbine Sensor"]
+    Filter["📊 Moving Average (3)"]
+    Math["➗ Multiply ×1.5"]
+    Condition["✅ Temperature > 80°C"]
+    Alert["🚨 SMS Alert"]
+
+    Sensor --> Filter
+    Filter --> Math
+    Math --> Condition
+    Condition --> Alert
+```
+
+---
+
+
+# 🧩 Supported Workflow Nodes
+
+| Category | Purpose |
+|-----------|---------|
+| Sensor | Select telemetry source |
+| Filter | Moving average processing |
+| Math | Multiply, add, subtract, divide |
+| Condition | Evaluate thresholds |
+| Action | SMS, Webhook, Incident Log | 
+
+
+---
+
+# 📁 Project Structure
+
+```text
+NexusFlow/
+│
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── services/
+│   │   ├── App.jsx
+│   │   └── main.jsx
+│   └── vite.config.js
+│
+├── backend/
+│   ├── config/
+│   ├── controllers/
+│   ├── models/
+│   ├── routes/
+│   ├── services/
+│   ├── simulator/
+│   ├── scripts/
+│   └── server.js
+│
+└── README.md
+```
+
+
+---
+
+# 🏃 Quick Start Guide
 
 ### 1. Prerequisites
 - **Node.js** (v18+ or v22+)
@@ -60,5 +283,5 @@ npm run simulate         # Streams simulated sensor readings into the ingestion 
 ---
 
 ## 📖 Subproject Documentation & Testing Guides
-- [Backend Documentation & Testing Guide (Week 1 & 2)](file:///backend/README.md)
-- [Frontend Documentation & Testing Guide (Week 1 & 2)](file:///frontend/README.md)
+- [Backend Documentation & Testing Guide](backend\README.md)
+- [Frontend Documentation & Testing Guide](frontend\README.md)
