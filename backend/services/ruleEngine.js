@@ -1,6 +1,7 @@
 const { Subject } = require('rxjs');
 const { compileGraph } = require('./streamCompiler');
 const Workflow = require('../models/Workflow');
+const socketHandler = require('../sockets/socketHandler');
 
 class RuleEngine {
   constructor() {
@@ -49,6 +50,19 @@ class RuleEngine {
           inputStream$: this.telemetry$,
           onAlert: () => {
             this.stats.dispatchedAlerts++;
+          },
+          onStep: (nodeId, item) => {
+            // Broadcast live step for visual wire glow execution feedback
+            socketHandler.broadcastPipelineStep({
+              workflowId: id,
+              workflowName: workflow.name,
+              nodeId,
+              value: item.value,
+              metric: item.metric,
+              deviceId: item.deviceId,
+              conditionMet: item.conditionMet || false,
+              timestamp: item.timestamp || new Date().toISOString()
+            });
           }
         }
       );
@@ -60,6 +74,7 @@ class RuleEngine {
       });
 
       console.log(`[RuleEngine] ✅ Deployed workflow '${workflow.name}' (${id}) with ${compiled.nodeCount} nodes.`);
+      socketHandler.broadcastEngineStatus(this.getStatus());
       return { success: true, message: `Workflow '${workflow.name}' deployed successfully.` };
     } catch (err) {
       console.error(`[RuleEngine] ❌ Failed to deploy workflow '${workflow.name}':`, err.message);
@@ -76,16 +91,20 @@ class RuleEngine {
       entry.compiled.destroy();
       this.activePipelines.delete(String(workflowId));
       console.log(`[RuleEngine] ⏸ Undeployed workflow '${entry.workflow.name}' (${workflowId}).`);
+      socketHandler.broadcastEngineStatus(this.getStatus());
       return true;
     }
     return false;
   }
 
   /**
-   * Dispatches incoming telemetry reading into the RxJS reactive stream
+   * Dispatches incoming telemetry reading into the RxJS reactive stream & broadcasts to WebSockets
    */
   processReading(reading) {
     this.stats.processedReadings++;
+    // Broadcast to real-time clients
+    socketHandler.broadcastTelemetry(reading);
+    // Feed into reactive stream
     this.telemetry$.next(reading);
   }
 
